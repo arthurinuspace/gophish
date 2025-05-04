@@ -126,9 +126,7 @@ func main() {
 	// 此段已不需要，因為已在 controllers/route.go 註冊 error handler
 	// --- END ---
 	if *mode == "admin" || *mode == "all" {
-		go func() {
-			http.ListenAndServe(adminConfig.ListenURL, adminServer.Router())
-		}()
+		go adminServer.Start()
 		go imapMonitor.Start()
 	}
 	if *mode == "phish" || *mode == "all" {
