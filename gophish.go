@@ -39,8 +39,8 @@ import (
 	"github.com/gophish/gophish/dialer"
 	"github.com/gophish/gophish/imap"
 	log "github.com/gophish/gophish/logger"
-	"github.com/gophish/gophish/middleware"
 	"github.com/gophish/gophish/models"
+	"github.com/gophish/gophish/middleware"
 	"github.com/gophish/gophish/webhook"
 )
 
@@ -121,8 +121,14 @@ func main() {
 	phishServer := controllers.NewPhishingServer(phishConfig)
 
 	imapMonitor := imap.NewMonitor()
+
+	// --- 撤銷不正確的 CSRF error handler 包裝 ---
+	// 此段已不需要，因為已在 controllers/route.go 註冊 error handler
+	// --- END ---
 	if *mode == "admin" || *mode == "all" {
-		go adminServer.Start()
+		go func() {
+			http.ListenAndServe(adminConfig.ListenURL, adminServer.Router())
+		}()
 		go imapMonitor.Start()
 	}
 	if *mode == "phish" || *mode == "all" {

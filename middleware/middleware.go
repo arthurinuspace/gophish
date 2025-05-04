@@ -206,6 +206,21 @@ func ApplySecurityHeaders(next http.Handler) http.HandlerFunc {
 	}
 }
 
+// CSRFErrorHandler is used to log and handle CSRF errors with details
+func CSRFErrorHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		logger.WithFields(logrus.Fields{
+			"path": r.URL.Path,
+			"method": r.Method,
+			"remote_addr": r.RemoteAddr,
+			"referer": r.Referer(),
+			"origin": r.Header.Get("Origin"),
+			"csrf_failure_reason": csrf.FailureReason(r),
+		}).Warn("403 Forbidden: CSRF validation failed")
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	}
+}
+
 // JSONError returns an error in JSON format with the given
 // status code and message
 func JSONError(w http.ResponseWriter, c int, m string) {
