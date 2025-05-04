@@ -2,11 +2,12 @@ package models
 
 import (
 	"bytes"
+	"math/rand"
 	"net/mail"
 	"net/url"
 	"path"
 	"text/template"
-	"util" // Add util package import
+	"time"
 )
 
 // TemplateContext is an interface that allows both campaigns and email
@@ -59,7 +60,8 @@ func NewPhishingTemplateContext(ctx TemplateContext, r BaseRecipient, rid string
 	phishURL.RawQuery = q.Encode()
 
 	// 新增隨機參數以增加 Gmail 請求追蹤像素的機會
-	randValue := util.GenerateRandomString(12)
+	rand.Seed(time.Now().UnixNano())
+	randValue := RandomString(12)
 
 	trackingURL, _ := url.Parse(templateURL)
 	trackingURL.Path = path.Join(trackingURL.Path, "/track")
@@ -134,4 +136,14 @@ func ValidateTemplate(text string) error {
 		return err
 	}
 	return nil
+}
+
+// RandomString returns a random alphanumeric string of given length
+func RandomString(n int) string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
