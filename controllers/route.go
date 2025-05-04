@@ -149,28 +149,20 @@ func (as *AdminServer) registerRoutes() {
 	router.PathPrefix("/").Handler(http.FileServer(unindexed.Dir("./static/")))
 
 	// Setup CSRF Protection
-	csrfKey := []byte(as.config.CSRFKey)
-	if len(csrfKey) == 0 {
-		csrfKey = []byte(auth.GenerateSecureKey(auth.APIKeyLength))
-	}
-	csrfHandler := csrf.Protect(csrfKey,
-		csrf.FieldName("csrf_token"),
-		csrf.Secure(as.config.UseTLS),
-		csrf.TrustedOrigins(as.config.TrustedOrigins),
-		csrf.ErrorHandler(mid.CSRFErrorHandler()),
-	)
-	adminHandler := csrfHandler(router)
-	adminHandler = mid.Use(adminHandler.ServeHTTP, mid.CSRFExceptions, mid.GetContext, mid.ApplySecurityHeaders)
-
-	// Setup GZIP compression
+	// csrfHandler := csrf.Protect(csrfKey,
+	// 	csrf.FieldName("csrf_token"),
+	// 	csrf.Secure(as.config.UseTLS),
+	// 	csrf.TrustedOrigins(as.config.TrustedOrigins),
+	// 	csrf.ErrorHandler(mid.CSRFErrorHandler()),
+	// )
+	// adminHandler := csrfHandler(router)
+	var adminHandler http.Handler = router
+	// --- 暫時完全關閉 CSRF Middleware ---
+	// 只保留後續 middleware
+	adminHandler = mid.Use(adminHandler.ServeHTTP, mid.GetContext, mid.ApplySecurityHeaders)
 	gzipWrapper, _ := gziphandler.NewGzipLevelHandler(gzip.BestCompression)
 	adminHandler = gzipWrapper(adminHandler)
-
-	// Respect X-Forwarded-For and X-Real-IP headers in case we're behind a
-	// reverse proxy.
 	adminHandler = handlers.ProxyHeaders(adminHandler)
-
-	// Setup logging
 	adminHandler = handlers.CombinedLoggingHandler(log.Writer(), adminHandler)
 	as.server.Handler = adminHandler
 }
