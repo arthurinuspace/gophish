@@ -6,6 +6,7 @@ import (
 	"github.com/gophish/gophish/logger"
 	"github.com/gophish/gophish/models"
 	"github.com/gorilla/csrf"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
@@ -148,7 +149,7 @@ func EnforceViewOnly(next http.Handler) http.Handler {
 				return
 			}
 			if !access {
-				logger.WithFields(map[string]interface{}{
+				logger.WithFields(logrus.Fields{
 					"path": r.URL.Path,
 					"method": r.Method,
 					"user": user.Username,
@@ -177,7 +178,7 @@ func RequirePermission(perm string) func(http.Handler) http.HandlerFunc {
 				return
 			}
 			if !access {
-				logger.WithFields(map[string]interface{}{
+				logger.WithFields(logrus.Fields{
 					"path": r.URL.Path,
 					"method": r.Method,
 					"user": user.Username,
