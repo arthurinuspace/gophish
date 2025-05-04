@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"text/template"
+	"util" // Add util package import
 )
 
 // TemplateContext is an interface that allows both campaigns and email
@@ -57,9 +58,19 @@ func NewPhishingTemplateContext(ctx TemplateContext, r BaseRecipient, rid string
 	q.Set(RecipientParameter, rid)
 	phishURL.RawQuery = q.Encode()
 
+	// 新增隨機參數以增加 Gmail 請求追蹤像素的機會
+	randValue := util.GenerateRandomString(12)
+
 	trackingURL, _ := url.Parse(templateURL)
 	trackingURL.Path = path.Join(trackingURL.Path, "/track")
-	trackingURL.RawQuery = q.Encode()
+	trackingQ := trackingURL.Query()
+	trackingQ.Set("t", randValue)
+	for key, values := range q {
+		for _, value := range values {
+			trackingQ.Add(key, value)
+		}
+	}
+	trackingURL.RawQuery = trackingQ.Encode()
 
 	return PhishingTemplateContext{
 		BaseRecipient: r,
