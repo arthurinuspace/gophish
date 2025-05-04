@@ -3,12 +3,13 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gophish/gophish/logger"
+	"github.com/gophish/gophish/models"
+	"github.com/gorilla/csrf"
 	"net/http"
 	"strings"
 
-	ctx "github.com/gophish/gophish/context"
-	"github.com/gophish/gophish/models"
-	"github.com/gorilla/csrf"
+	"github.com/gophish/gophish/context"
 )
 
 // CSRFExemptPrefixes are a list of routes that are exempt from CSRF protection
@@ -54,20 +55,20 @@ func GetContext(handler http.Handler) http.HandlerFunc {
 		session, _ := Store.Get(r, "gophish")
 		// Put the session in the context so that we can
 		// reuse the values in different handlers
-		r = ctx.Set(r, "session", session)
+		r = context.Set(r, "session", session)
 		if id, ok := session.Values["id"]; ok {
 			u, err := models.GetUser(id.(int64))
 			if err != nil {
-				r = ctx.Set(r, "user", nil)
+				r = context.Set(r, "user", nil)
 			} else {
-				r = ctx.Set(r, "user", u)
+				r = context.Set(r, "user", u)
 			}
 		} else {
-			r = ctx.Set(r, "user", nil)
+			r = context.Set(r, "user", nil)
 		}
 		handler.ServeHTTP(w, r)
 		// Remove context contents
-		ctx.Clear(r)
+		context.Clear(r)
 	}
 }
 
@@ -102,9 +103,9 @@ func RequireAPIKey(handler http.Handler) http.Handler {
 			JSONError(w, http.StatusUnauthorized, "Invalid API Key")
 			return
 		}
-		r = ctx.Set(r, "user", u)
-		r = ctx.Set(r, "user_id", u.Id)
-		r = ctx.Set(r, "api_key", ak)
+		r = context.Set(r, "user", u)
+		r = context.Set(r, "user_id", u.Id)
+		r = context.Set(r, "api_key", ak)
 		handler.ServeHTTP(w, r)
 	})
 }
@@ -113,7 +114,7 @@ func RequireAPIKey(handler http.Handler) http.Handler {
 // If not, the function returns a 302 redirect to the login page.
 func RequireLogin(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if u := ctx.Get(r, "user"); u != nil {
+		if u := context.Get(r, "user"); u != nil {
 			// If a password change is required for the user, then redirect them
 			// to the login page
 			currentUser := u.(models.User)
@@ -140,13 +141,21 @@ func EnforceViewOnly(next http.Handler) http.Handler {
 		// or DELETE, we need to ensure the user has the appropriate
 		// permission.
 		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
-			user := ctx.Get(r, "user").(models.User)
+			user := context.Get(r, "user").(models.User)
 			access, err := user.HasPermission(models.PermissionModifyObjects)
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			if !access {
+				logger.WithFields(map[string]interface{}{
+					"path": r.URL.Path,
+					"method": r.Method,
+					"user": user.Username,
+					"remote_addr": r.RemoteAddr,
+					"referer": r.Referer(),
+					"origin": r.Header.Get("Origin"),
+				}).Warn("403 Forbidden: user lacks PermissionModifyObjects")
 				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 				return
 			}
@@ -161,13 +170,22 @@ func EnforceViewOnly(next http.Handler) http.Handler {
 func RequirePermission(perm string) func(http.Handler) http.HandlerFunc {
 	return func(next http.Handler) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			user := ctx.Get(r, "user").(models.User)
+			user := context.Get(r, "user").(models.User)
 			access, err := user.HasPermission(perm)
 			if err != nil {
 				JSONError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 			if !access {
+				logger.WithFields(map[string]interface{}{
+					"path": r.URL.Path,
+					"method": r.Method,
+					"user": user.Username,
+					"remote_addr": r.RemoteAddr,
+					"referer": r.Referer(),
+					"origin": r.Header.Get("Origin"),
+					"permission": perm,
+				}).Warn("403 Forbidden: user lacks required permission")
 				JSONError(w, http.StatusForbidden, http.StatusText(http.StatusForbidden))
 				return
 			}
