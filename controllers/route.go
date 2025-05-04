@@ -16,6 +16,7 @@ import (
 	ctx "github.com/gophish/gophish/context"
 	"github.com/gophish/gophish/controllers/api"
 	log "github.com/gophish/gophish/logger"
+	"github.com/sirupsen/logrus"
 	mid "github.com/gophish/gophish/middleware"
 	"github.com/gophish/gophish/middleware/ratelimit"
 	"github.com/gophish/gophish/models"
@@ -307,6 +308,13 @@ func (as *AdminServer) nextOrIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (as *AdminServer) handleInvalidLogin(w http.ResponseWriter, r *http.Request, message string) {
+	log.WithFields(logrus.Fields{
+		"path": r.URL.Path,
+		"method": r.Method,
+		"remote_addr": r.RemoteAddr,
+		"referer": r.Referer(),
+		"origin": r.Header.Get("Origin"),
+	}).Warn("TEST 403 LOGGING: about to call as.handleInvalidLogin")
 	session := ctx.Get(r, "session").(*sessions.Session)
 	Flash(w, r, "danger", message)
 	params := struct {
@@ -378,6 +386,13 @@ func (as *AdminServer) Login(w http.ResponseWriter, r *http.Request) {
 		u, err := models.GetUserByUsername(username)
 		if err != nil {
 			log.Error(err)
+			log.WithFields(logrus.Fields{
+				"path": r.URL.Path,
+				"method": r.Method,
+				"remote_addr": r.RemoteAddr,
+				"referer": r.Referer(),
+				"origin": r.Header.Get("Origin"),
+			}).Warn("TEST 403 LOGGING: about to call as.handleInvalidLogin")
 			as.handleInvalidLogin(w, r, "Invalid Username/Password")
 			return
 		}
@@ -385,10 +400,24 @@ func (as *AdminServer) Login(w http.ResponseWriter, r *http.Request) {
 		err = auth.ValidatePassword(password, u.Hash)
 		if err != nil {
 			log.Error(err)
+			log.WithFields(logrus.Fields{
+				"path": r.URL.Path,
+				"method": r.Method,
+				"remote_addr": r.RemoteAddr,
+				"referer": r.Referer(),
+				"origin": r.Header.Get("Origin"),
+			}).Warn("TEST 403 LOGGING: about to call as.handleInvalidLogin")
 			as.handleInvalidLogin(w, r, "Invalid Username/Password")
 			return
 		}
 		if u.AccountLocked {
+			log.WithFields(logrus.Fields{
+				"path": r.URL.Path,
+				"method": r.Method,
+				"remote_addr": r.RemoteAddr,
+				"referer": r.Referer(),
+				"origin": r.Header.Get("Origin"),
+			}).Warn("TEST 403 LOGGING: about to call as.handleInvalidLogin")
 			as.handleInvalidLogin(w, r, "Account Locked")
 			return
 		}
