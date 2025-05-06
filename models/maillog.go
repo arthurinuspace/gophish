@@ -155,7 +155,7 @@ func (m *MailLog) CacheCampaign(campaign *Campaign) error {
 }
 
 func (m *MailLog) GetSmtpFrom() (string, error) {
-	c, err := GetCampaign(m.CampaignId, m.UserId)
+	c, err := GetCampaign(m.CampaignId, m.UserId, false)
 	if err != nil {
 		return "", err
 	}
@@ -360,4 +360,9 @@ func addAttachment(msg *gomail.Message, a Attachment, ptx PhishingTemplateContex
 	} else {
 		msg.Attach(a.Name, copyFunc)
 	}
+}
+
+// GetCampaignMailContext returns the campaign for mailing context, ensuring all details are loaded.
+func GetCampaignMailContext(id int64, uid int64) (Campaign, error) {
+	return GetCampaign(id, uid, false)
 }

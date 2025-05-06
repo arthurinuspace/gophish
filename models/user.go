@@ -96,7 +96,7 @@ func DeleteUser(id int64) error {
 			return err
 		}
 	}
-	campaigns, err := GetCampaigns(id)
+	campaigns, err := GetCampaigns(id, false)
 	if err != nil {
 		return err
 	}

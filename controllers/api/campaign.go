@@ -17,7 +17,9 @@ import (
 func (as *Server) Campaigns(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == "GET":
-		cs, err := models.GetCampaigns(ctx.Get(r, "user_id").(int64))
+		user := ctx.Get(r, "user").(models.User)
+		isAdmin := user.Role.Slug == "admin"
+		cs, err := models.GetCampaigns(user.Id, isAdmin)
 		if err != nil {
 			log.Error(err)
 		}
@@ -49,7 +51,9 @@ func (as *Server) Campaigns(w http.ResponseWriter, r *http.Request) {
 func (as *Server) CampaignsSummary(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == "GET":
-		cs, err := models.GetCampaignSummaries(ctx.Get(r, "user_id").(int64))
+		user := ctx.Get(r, "user").(models.User)
+		isAdmin := user.Role.Slug == "admin"
+		cs, err := models.GetCampaignSummaries(user.Id, isAdmin)
 		if err != nil {
 			log.Error(err)
 			JSONResponse(w, models.Response{Success: false, Message: err.Error()}, http.StatusInternalServerError)
@@ -64,7 +68,9 @@ func (as *Server) CampaignsSummary(w http.ResponseWriter, r *http.Request) {
 func (as *Server) Campaign(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.ParseInt(vars["id"], 0, 64)
-	c, err := models.GetCampaign(id, ctx.Get(r, "user_id").(int64))
+	user := ctx.Get(r, "user").(models.User)
+	isAdmin := user.Role.Slug == "admin"
+	c, err := models.GetCampaign(id, user.Id, isAdmin)
 	if err != nil {
 		log.Error(err)
 		JSONResponse(w, models.Response{Success: false, Message: "Campaign not found"}, http.StatusNotFound)
@@ -88,7 +94,9 @@ func (as *Server) Campaign(w http.ResponseWriter, r *http.Request) {
 func (as *Server) CampaignResults(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.ParseInt(vars["id"], 0, 64)
-	cr, err := models.GetCampaignResults(id, ctx.Get(r, "user_id").(int64))
+	user := ctx.Get(r, "user").(models.User)
+	isAdmin := user.Role.Slug == "admin"
+	cr, err := models.GetCampaignResults(id, user.Id, isAdmin)
 	if err != nil {
 		log.Error(err)
 		JSONResponse(w, models.Response{Success: false, Message: "Campaign not found"}, http.StatusNotFound)
@@ -104,9 +112,11 @@ func (as *Server) CampaignResults(w http.ResponseWriter, r *http.Request) {
 func (as *Server) CampaignSummary(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.ParseInt(vars["id"], 0, 64)
+	user := ctx.Get(r, "user").(models.User)
+	isAdmin := user.Role.Slug == "admin"
 	switch {
 	case r.Method == "GET":
-		cs, err := models.GetCampaignSummary(id, ctx.Get(r, "user_id").(int64))
+		cs, err := models.GetCampaignSummary(id, user.Id, isAdmin)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				JSONResponse(w, models.Response{Success: false, Message: "Campaign not found"}, http.StatusNotFound)

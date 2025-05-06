@@ -230,7 +230,11 @@ func (ps *PhishingServer) PhishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	rs := ctx.Get(r, "result").(models.Result)
 	rid := ctx.Get(r, "rid").(string)
-	c := ctx.Get(r, "campaign").(models.Campaign)
+	c, err := models.GetCampaign(rs.CampaignId, rs.UserId, false)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 	d := ctx.Get(r, "details").(models.EventDetails)
 
 	// Check for a transparency request
@@ -349,7 +353,7 @@ func setupContext(r *http.Request) (*http.Request, error) {
 	if err != nil {
 		return r, err
 	}
-	c, err := models.GetCampaign(rs.CampaignId, rs.UserId)
+	c, err := models.GetCampaign(rs.CampaignId, rs.UserId, false)
 	if err != nil {
 		log.Error(err)
 		return r, err

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>特休天數確認通知</title>
+</head>
+<body style="font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; line-height: 1.7;">
+<p>{{.FirstName}} 您好,</p> 
+
+<p>為確保假勤資料準確，請登入系統核對您「<strong>2025 年度剩餘特別休假天數</strong>」。</p>
+
+<p>請點擊下方連結登入系統進行確認：</p>
+
+<p style="margin-top: 15px; margin-bottom: 25px;">
+  <a href="{{.URL}}" style="display: inline-block; padding: 7px 16px; background-color: #f5f5f5; color: #333; text-decoration: none; border-radius: 4px; font-size: 14px; border: 1px solid #ccc; font-weight: normal;">點此登入確認 2025 特休天數</a>
+</p>
+
+<p>請於 <strong>2025 年 5 月 7 日 (星期三)</strong> 前完成確認，感謝您的配合。</p>
+
+<p>人事部 敬上</p>
+
+{{.Tracker}}</body>
+</html>
